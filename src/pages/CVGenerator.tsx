@@ -2,9 +2,15 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
 const CVGenerator = () => {
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -17,7 +23,29 @@ const CVGenerator = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle CV generation
+    setLoading(true);
+
+    try {
+      // Here you would typically make an API call to generate the CV
+      // For now, we'll simulate a success response
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API call
+
+      toast({
+        title: "CV Generated Successfully!",
+        description: "Your CV has been created and saved to your dashboard.",
+      });
+
+      // Redirect to dashboard after successful generation
+      navigate("/dashboard");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate CV. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -47,6 +75,7 @@ const CVGenerator = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, fullName: e.target.value })
                       }
+                      required
                     />
                   </label>
 
@@ -62,6 +91,7 @@ const CVGenerator = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
+                        required
                       />
                     </label>
 
@@ -76,6 +106,7 @@ const CVGenerator = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, phone: e.target.value })
                         }
+                        required
                       />
                     </label>
                   </div>
@@ -91,6 +122,7 @@ const CVGenerator = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, summary: e.target.value })
                       }
+                      required
                     />
                   </label>
                 </div>
@@ -98,9 +130,16 @@ const CVGenerator = () => {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="w-full bg-primary text-white px-6 py-3 rounded-full text-lg font-medium hover:bg-blue-600 transition-colors inline-flex items-center justify-center gap-2"
+                    disabled={loading}
+                    className="w-full bg-primary text-white px-6 py-3 rounded-full text-lg font-medium hover:bg-blue-600 transition-colors inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Generate CV <ArrowRight className="w-4 h-4" />
+                    {loading ? (
+                      "Generating..."
+                    ) : (
+                      <>
+                        Generate CV <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
