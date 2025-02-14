@@ -1,19 +1,13 @@
 
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Mic, MicOff, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { VoiceInputField } from "@/components/voice-input/VoiceInputField";
+import { TemplateSelector } from "@/components/cv/TemplateSelector";
 
 const CVGenerator = () => {
-  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [currentField, setCurrentField] = useState<string | null>(null);
@@ -29,7 +23,7 @@ const CVGenerator = () => {
     experience: "",
     education: "",
     skills: "",
-    template: "modern", // new field for template selection
+    template: "modern",
     coverLetter: "",
   });
 
@@ -48,8 +42,6 @@ const CVGenerator = () => {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        // Here you would typically send this to a speech-to-text service
-        // For now, we'll simulate the conversion
         await processAudioToText(audioBlob, fieldName);
       };
 
@@ -78,12 +70,9 @@ const CVGenerator = () => {
   };
 
   const processAudioToText = async (audioBlob: Blob, fieldName: string) => {
-    // Here you would integrate with a speech-to-text service
-    // For now, we'll simulate the conversion with a delay
     setLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Simulated text result
     const simulatedText = "This is a simulated transcription of your voice recording.";
     
     setFormData(prev => ({
@@ -103,14 +92,11 @@ const CVGenerator = () => {
     setLoading(true);
 
     try {
-      // Here you would typically make an API call to generate the CV
       await new Promise(resolve => setTimeout(resolve, 1500));
-
       toast({
         title: "CV Generated Successfully!",
         description: "Your CV has been created and saved to your dashboard.",
       });
-
       navigate("/dashboard");
     } catch (error) {
       toast({
@@ -123,23 +109,9 @@ const CVGenerator = () => {
     }
   };
 
-  const VoiceButton = ({ fieldName }: { fieldName: string }) => (
-    <button
-      type="button"
-      onClick={() => isRecording && currentField === fieldName ? stopRecording() : startRecording(fieldName)}
-      className={`p-2 rounded-full transition-colors ${
-        isRecording && currentField === fieldName
-          ? "bg-red-500 hover:bg-red-600"
-          : "bg-gray-200 hover:bg-gray-300"
-      }`}
-    >
-      {isRecording && currentField === fieldName ? (
-        <MicOff className="w-4 h-4 text-white" />
-      ) : (
-        <Mic className="w-4 h-4" />
-      )}
-    </button>
-  );
+  const updateField = (field: keyof typeof formData) => (value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -156,186 +128,116 @@ const CVGenerator = () => {
 
             <div className="bg-white rounded-2xl p-8 shadow-sm">
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                  {/* Template Selection */}
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Choose Template
-                    </label>
-                    <Select
-                      value={formData.template}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, template: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a template" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="modern">Modern</SelectItem>
-                        <SelectItem value="professional">Professional</SelectItem>
-                        <SelectItem value="creative">Creative</SelectItem>
-                        <SelectItem value="executive">Executive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <TemplateSelector
+                  value={formData.template}
+                  onChange={(value) => updateField("template")(value)}
+                />
 
-                  {/* Personal Information */}
-                  <div className="relative">
-                    <label className="block mb-4">
-                      <span className="text-sm font-medium text-gray-700">
-                        Full Name
-                      </span>
-                      <div className="mt-1 flex gap-2">
-                        <input
-                          type="text"
-                          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-primary"
-                          value={formData.fullName}
-                          onChange={(e) =>
-                            setFormData({ ...formData, fullName: e.target.value })
-                          }
-                          required
-                        />
-                        <VoiceButton fieldName="fullName" />
-                      </div>
-                    </label>
-                  </div>
+                <div className="space-y-4">
+                  <VoiceInputField
+                    label="Full Name"
+                    fieldName="fullName"
+                    value={formData.fullName}
+                    onChange={updateField("fullName")}
+                    isRecording={isRecording}
+                    currentField={currentField}
+                    onStartRecording={startRecording}
+                    onStopRecording={stopRecording}
+                    required
+                  />
 
                   <div className="grid md:grid-cols-2 gap-4">
-                    <label className="block">
-                      <span className="text-sm font-medium text-gray-700">
-                        Email
-                      </span>
-                      <input
-                        type="email"
-                        className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-primary"
-                        value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
-                        required
-                      />
-                    </label>
+                    <VoiceInputField
+                      label="Email"
+                      fieldName="email"
+                      value={formData.email}
+                      onChange={updateField("email")}
+                      isRecording={isRecording}
+                      currentField={currentField}
+                      onStartRecording={startRecording}
+                      onStopRecording={stopRecording}
+                      type="email"
+                      required
+                    />
 
-                    <label className="block">
-                      <span className="text-sm font-medium text-gray-700">
-                        Phone
-                      </span>
-                      <input
-                        type="tel"
-                        className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-primary"
-                        value={formData.phone}
-                        onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
-                        }
-                        required
-                      />
-                    </label>
+                    <VoiceInputField
+                      label="Phone"
+                      fieldName="phone"
+                      value={formData.phone}
+                      onChange={updateField("phone")}
+                      isRecording={isRecording}
+                      currentField={currentField}
+                      onStartRecording={startRecording}
+                      onStopRecording={stopRecording}
+                      type="tel"
+                      required
+                    />
                   </div>
 
-                  {/* Professional Summary with Voice Input */}
-                  <div className="relative">
-                    <label className="block">
-                      <span className="text-sm font-medium text-gray-700">
-                        Professional Summary
-                      </span>
-                      <div className="mt-1 flex gap-2">
-                        <textarea
-                          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-primary"
-                          rows={4}
-                          value={formData.summary}
-                          onChange={(e) =>
-                            setFormData({ ...formData, summary: e.target.value })
-                          }
-                          required
-                        />
-                        <VoiceButton fieldName="summary" />
-                      </div>
-                    </label>
-                  </div>
+                  <VoiceInputField
+                    label="Professional Summary"
+                    fieldName="summary"
+                    value={formData.summary}
+                    onChange={updateField("summary")}
+                    isRecording={isRecording}
+                    currentField={currentField}
+                    onStartRecording={startRecording}
+                    onStopRecording={stopRecording}
+                    multiline
+                    required
+                  />
 
-                  {/* Experience with Voice Input */}
-                  <div className="relative">
-                    <label className="block">
-                      <span className="text-sm font-medium text-gray-700">
-                        Work Experience
-                      </span>
-                      <div className="mt-1 flex gap-2">
-                        <textarea
-                          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-primary"
-                          rows={4}
-                          value={formData.experience}
-                          onChange={(e) =>
-                            setFormData({ ...formData, experience: e.target.value })
-                          }
-                          required
-                        />
-                        <VoiceButton fieldName="experience" />
-                      </div>
-                    </label>
-                  </div>
+                  <VoiceInputField
+                    label="Work Experience"
+                    fieldName="experience"
+                    value={formData.experience}
+                    onChange={updateField("experience")}
+                    isRecording={isRecording}
+                    currentField={currentField}
+                    onStartRecording={startRecording}
+                    onStopRecording={stopRecording}
+                    multiline
+                    required
+                  />
 
-                  {/* Education with Voice Input */}
-                  <div className="relative">
-                    <label className="block">
-                      <span className="text-sm font-medium text-gray-700">
-                        Education
-                      </span>
-                      <div className="mt-1 flex gap-2">
-                        <textarea
-                          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-primary"
-                          rows={4}
-                          value={formData.education}
-                          onChange={(e) =>
-                            setFormData({ ...formData, education: e.target.value })
-                          }
-                          required
-                        />
-                        <VoiceButton fieldName="education" />
-                      </div>
-                    </label>
-                  </div>
+                  <VoiceInputField
+                    label="Education"
+                    fieldName="education"
+                    value={formData.education}
+                    onChange={updateField("education")}
+                    isRecording={isRecording}
+                    currentField={currentField}
+                    onStartRecording={startRecording}
+                    onStopRecording={stopRecording}
+                    multiline
+                    required
+                  />
 
-                  {/* Skills with Voice Input */}
-                  <div className="relative">
-                    <label className="block">
-                      <span className="text-sm font-medium text-gray-700">
-                        Skills
-                      </span>
-                      <div className="mt-1 flex gap-2">
-                        <textarea
-                          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-primary"
-                          rows={4}
-                          value={formData.skills}
-                          onChange={(e) =>
-                            setFormData({ ...formData, skills: e.target.value })
-                          }
-                          required
-                        />
-                        <VoiceButton fieldName="skills" />
-                      </div>
-                    </label>
-                  </div>
+                  <VoiceInputField
+                    label="Skills"
+                    fieldName="skills"
+                    value={formData.skills}
+                    onChange={updateField("skills")}
+                    isRecording={isRecording}
+                    currentField={currentField}
+                    onStartRecording={startRecording}
+                    onStopRecording={stopRecording}
+                    multiline
+                    required
+                  />
 
-                  {/* Cover Letter with Voice Input */}
-                  <div className="relative">
-                    <label className="block">
-                      <span className="text-sm font-medium text-gray-700">
-                        Cover Letter
-                      </span>
-                      <div className="mt-1 flex gap-2">
-                        <textarea
-                          className="flex-1 rounded-lg border border-gray-300 px-4 py-2 focus:border-primary focus:ring-primary"
-                          rows={6}
-                          value={formData.coverLetter}
-                          onChange={(e) =>
-                            setFormData({ ...formData, coverLetter: e.target.value })
-                          }
-                        />
-                        <VoiceButton fieldName="coverLetter" />
-                      </div>
-                    </label>
-                  </div>
+                  <VoiceInputField
+                    label="Cover Letter"
+                    fieldName="coverLetter"
+                    value={formData.coverLetter}
+                    onChange={updateField("coverLetter")}
+                    isRecording={isRecording}
+                    currentField={currentField}
+                    onStartRecording={startRecording}
+                    onStopRecording={stopRecording}
+                    multiline
+                    rows={6}
+                  />
                 </div>
 
                 <div className="pt-4">
